@@ -26,16 +26,25 @@ app.use((req, res, next) => {
 
 // Schema de validação para leads
 const insertLeadSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  email: z.string().email("Email inválido"),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  role: z.string().optional(),
-  challenges: z.array(z.string()).default([]),
+  // Company Information
+  companyName: z.string().min(2, "Nome da empresa é obrigatório"),
+  industry: z.string().min(1, "Setor é obrigatório"),
+  companySize: z.string().min(1, "Porte da empresa é obrigatório"),
+  position: z.string().min(2, "Cargo é obrigatório"),
+  
+  // Challenges
+  challenges: z.array(z.string()).min(1, "Selecione pelo menos um desafio"),
   mainChallenge: z.string().optional(),
   impactLevel: z.string().optional(),
+  
+  // Solutions Interest
   interestedSolutions: z.array(z.string()).default([]),
   motivation: z.string().optional(),
+  
+  // Contact Information
+  fullName: z.string().min(2, "Nome completo é obrigatório"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
   preferredTime: z.string().optional(),
   budget: z.string().optional(),
   urgency: z.string().optional(),
