@@ -1,9 +1,8 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertLeadSchema } from "@shared/schema";
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express): Promise<void> {
   // Create a new lead
   app.post("/api/leads", async (req, res) => {
     try {
@@ -40,7 +39,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Erro ao buscar lead" });
     }
   });
-
-  const httpServer = createServer(app);
-  return httpServer;
 }

@@ -36,35 +36,42 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+// Função para configurar o servidor
+async function setupServer() {
+  await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    log(`Error: ${err.message}`);
   });
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, app);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 3000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '3000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-  }, () => {
-    log(`serving on port ${port}`);
+  return app;
+}
+
+// Inicializa o servidor apenas em desenvolvimento
+if (process.env.NODE_ENV === "development") {
+  setupServer().then(() => {
+    const port = parseInt(process.env.PORT || '3000', 10);
+    app.listen(port, "0.0.0.0", () => {
+      log(`serving on port ${port}`);
+    });
+  }).catch(err => {
+    log(`Failed to start server: ${err.message}`);
+    process.exit(1);
   });
-})();
+}
+
+// Exporta o app para Vercel serverless
+export default setupServer;
