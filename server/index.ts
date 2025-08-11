@@ -52,7 +52,8 @@ async function setupServer() {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, app);
+    // Em desenvolvimento, não precisamos do setupVite para produção
+    serveStatic(app);
   } else {
     serveStatic(app);
   }
