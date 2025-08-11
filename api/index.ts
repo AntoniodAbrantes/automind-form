@@ -1,6 +1,5 @@
 import express from "express";
-import { storage } from "../server/storage";
-import { insertLeadSchema } from "../shared/schema";
+import { z } from "zod";
 
 const app = express();
 
@@ -22,6 +21,51 @@ app.use((req, res, next) => {
   
   next();
 });
+
+// Schema de validação para leads
+const insertLeadSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  role: z.string().optional(),
+  challenges: z.array(z.string()).default([]),
+  mainChallenge: z.string().optional(),
+  impactLevel: z.string().optional(),
+  interestedSolutions: z.array(z.string()).default([]),
+  motivation: z.string().optional(),
+  preferredTime: z.string().optional(),
+  budget: z.string().optional(),
+  urgency: z.string().optional(),
+  comments: z.string().optional()
+});
+
+// Storage em memória simples
+class SimpleStorage {
+  private leads = new Map();
+  private idCounter = 1;
+
+  async createLead(data: any) {
+    const id = `lead_${this.idCounter++}`;
+    const lead = {
+      id,
+      ...data,
+      createdAt: new Date().toISOString()
+    };
+    this.leads.set(id, lead);
+    return lead;
+  }
+
+  async getAllLeads() {
+    return Array.from(this.leads.values());
+  }
+
+  async getLead(id: string) {
+    return this.leads.get(id) || null;
+  }
+}
+
+const storage = new SimpleStorage();
 
 // Rota para criar um novo lead
 app.post("/api/leads", async (req, res) => {
