@@ -22,7 +22,15 @@ export class MemStorage implements IStorage {
     const lead: Lead = { 
       ...insertLead, 
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      mainChallenge: insertLead.mainChallenge || null,
+      impactLevel: insertLead.impactLevel || null,
+      interestedSolutions: insertLead.interestedSolutions || null,
+      motivation: insertLead.motivation || null,
+      preferredTime: insertLead.preferredTime || null,
+      budget: insertLead.budget || null,
+      urgency: insertLead.urgency || null,
+      comments: insertLead.comments || null
     };
     this.leads.set(id, lead);
     return lead;
