@@ -1,5 +1,7 @@
 import express from "express";
 import { z } from "zod";
+import path from "path";
+import fs from "fs";
 
 const app = express();
 
@@ -11,14 +13,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  
+
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       console.log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
     }
   });
-  
+
   next();
 });
 
@@ -74,7 +76,7 @@ app.post("/api/leads", async (req, res) => {
     const lead = await storage.createLead(validatedData);
     res.json(lead);
   } catch (error: any) {
-    res.status(400).json({ 
+    res.status(400).json({
       message: error.message || "Erro ao criar lead",
       errors: error.errors || []
     });
@@ -108,24 +110,47 @@ app.get("/api/leads/:id", async (req, res) => {
 app.use((err: any, _req: any, res: any, _next: any) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
-  
+
   console.error(`Error: ${err.message}`);
   res.status(status).json({ message });
 });
 
-// Rota para servir arquivos estáticos (fallback)
-app.use("*", (_req, res) => {
-  res.status(200).json({ 
-    message: "API Automind Form funcionando", 
-    status: "success",
-    timestamp: new Date().toISOString(),
-    endpoints: [
-      "POST /api/leads - Criar novo lead",
-      "GET /api/leads - Listar todos os leads",
-      "GET /api/leads/:id - Buscar lead específico"
-    ]
+// Servir arquivos estáticos do frontend
+const distPath = path.resolve(process.cwd(), "dist", "public");
+
+if (fs.existsSync(distPath)) {
+  // Serve arquivos estáticos (CSS, JS, imagens)
+  app.use(express.static(distPath));
+
+  // Fallback para SPA - sempre retorna index.html para rotas não-API
+  app.get("*", (req, res) => {
+    // Se não for uma rota da API, serve o index.html
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(distPath, "index.html"));
+    } else {
+      res.status(404).json({ message: "API endpoint não encontrado" });
+    }
   });
-});
+} else {
+  // Fallback se o diretório dist não existir
+  app.use("*", (req, res) => {
+    if (req.path.startsWith("/api")) {
+      res.status(404).json({ message: "API endpoint não encontrado" });
+    } else {
+      res.status(200).json({
+        message: "API Automind Form funcionando",
+        status: "success",
+        timestamp: new Date().toISOString(),
+        note: "Frontend não encontrado. Execute 'npm run build' primeiro.",
+        endpoints: [
+          "POST /api/leads - Criar novo lead",
+          "GET /api/leads - Listar todos os leads",
+          "GET /api/leads/:id - Buscar lead específico"
+        ]
+      });
+    }
+  });
+}
 
 // Exporta o app para Vercel
 export default app; 
